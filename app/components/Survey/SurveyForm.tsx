@@ -5,7 +5,8 @@ import { surveyQuestions } from './questions';
 import { AnimatePresence, motion } from 'framer-motion';
 import ProgressBar from './ProgressBar';
 import Question from './Question';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { Button } from '../ui/Button';
 
 type FormData = {
   [key: string]: any;
@@ -13,26 +14,11 @@ type FormData = {
 
 const SurveyForm = () => {
   const [step, setStep] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
 
-  const { register, handleSubmit, watch, formState: { errors }, setError, setValue } = useForm<FormData>();
+  const { register, watch, handleSubmit, formState: { errors }, setError, setValue } = useForm<FormData>();
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
-    try {
-      const res = await fetch('/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (res.ok) {
-        alert('Thank you for your feedback!');
-      } else {
-        alert('Something went wrong. Please try again.');
-      }
-    } catch (err) {
-      console.error('Submit error:', err);
-    }
-  };
+  const isLastStep = step === surveyQuestions.length - 1;
 
   const nextStep = () => {
     const currentQuestion = surveyQuestions[step];
@@ -43,6 +29,10 @@ const SurveyForm = () => {
       return;
     }
 
+    if (step >= surveyQuestions.length - 1) {
+      return;
+    }
+
     setStep((prev) => prev + 1);
   };
 
@@ -50,10 +40,41 @@ const SurveyForm = () => {
     setStep((prev) => prev - 1);
   };
 
-  const isLastStep = step === surveyQuestions.length - 1;
+  const onSubmit = async (data: FormData) => {
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      console.error('Submit error:', err);
+    }
+  };
+
+  if (submitted) {
+    // 🚀 Animated Thank You screen (we'll make it fancier next)
+    return (
+      <motion.div
+        className="flex flex-col items-center justify-center min-h-screen p-8 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <h1 className="text-4xl font-bold text-green-600 mb-6">🎉 Thank You!</h1>
+        <p className="text-lg text-gray-700">We appreciate your feedback.</p>
+      </motion.div>
+    );
+  }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl mx-auto p-8 space-y-8">
+    <div className="max-w-2xl mx-auto p-8 space-y-8">
       <ProgressBar step={step} total={surveyQuestions.length} />
 
       <AnimatePresence mode="wait">
@@ -69,39 +90,28 @@ const SurveyForm = () => {
             question={surveyQuestions[step]}
             register={register}
             error={errors[surveyQuestions[step].id]}
-            setValue={setValue} // ✅ NOW PASSED CORRECTLY
+            setValue={setValue}
           />
         </motion.div>
       </AnimatePresence>
 
       <div className="flex justify-between pt-6">
         {step > 0 && (
-          <button
-            type="button"
-            onClick={prevStep}
-            className="px-6 py-3 rounded-full bg-gray-400 hover:bg-gray-500 text-white font-semibold transition"
-          >
+          <Button type="button" onClick={prevStep} variant="secondary">
             Back
-          </button>
+          </Button>
         )}
         {!isLastStep ? (
-          <button
-            type="button"
-            onClick={nextStep}
-            className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition ml-auto"
-          >
+          <Button type="button" onClick={nextStep} className="ml-auto">
             Next
-          </button>
+          </Button>
         ) : (
-          <button
-            type="submit"
-            className="px-6 py-3 rounded-full bg-green-600 hover:bg-green-700 text-white font-semibold transition ml-auto"
-          >
+          <Button type="button" onClick={handleSubmit(onSubmit)} className="ml-auto" variant="success">
             Submit
-          </button>
+          </Button>
         )}
       </div>
-    </form>
+    </div>
   );
 };
 

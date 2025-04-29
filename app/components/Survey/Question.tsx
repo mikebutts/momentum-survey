@@ -1,4 +1,6 @@
 // /components/Survey/Question.tsx
+
+"use client"
 import { Checkbox } from '../ui/Checkbox';
 import  Input  from '../ui/Input';
 import { Radio } from '../ui/Radio';

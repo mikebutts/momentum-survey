@@ -1,16 +1,10 @@
-// /pages/api/submit.ts
 import { google } from 'googleapis';
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextResponse } from 'next/server';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
-  }
-
-  const body = req.body;
+export async function POST(req: Request) {
+  const body = await req.json();
 
   try {
-    // Authenticate
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -21,11 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Spreadsheet ID and sheet name
     const spreadsheetId = process.env.SPREADSHEET_ID as string;
-    const sheetName = 'Responses'; // or whatever your tab is named
 
-    // Format values to insert
+
     const values = [
       [
         body.q1 || '',
@@ -39,16 +31,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:F`,
+      range: 'Responses!A:F',
       valueInputOption: 'RAW',
-      requestBody: {
-        values,
-      },
+      requestBody: { values },
     });
 
-    res.status(200).json({ message: 'Success' });
-  } catch (error) {
-    console.error('Error appending to Google Sheet:', error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Google Sheets API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
