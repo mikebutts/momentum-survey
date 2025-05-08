@@ -24,7 +24,7 @@ const SurveyForm = () => {
     const currentQuestion = surveyQuestions[step];
     const value = watch(currentQuestion.id);
 
-    if (currentQuestion.required && (value === undefined || value.length === 0)) {
+    if (currentQuestion.required && (value === undefined || value?.length === 0)) {
       setError(currentQuestion.id, { type: 'manual', message: 'This field is required' });
       return;
     }
